@@ -18,7 +18,7 @@ public class Container {
         this.members = new ArrayList<>();
     }
 
-    public Container getInstance() {
+    public static Container getInstance() {
         if(instance == null) {
             synchronized (Container.class) {
                 if (instance == null) {
@@ -93,14 +93,29 @@ public class Container {
             return members.size();
         }
 
-        public void store() throw PersistenceException {
+        public void store() throws PersistenceException {
             if (strategy == null) {
                 throw new PersistenceException(PersistenceException.ExceptionType.NoStrategyIsSet, "No strategy set for persistence");
-        }
-            try {
-                strategy.save(members);  // Сохраняем данные с использованием установленной стратегии
-            } catch (PersistenceException e) {
-                throw new PersistenceException(PersistenceException.ExceptionType.ConnectionNotAvailable, "Error saving members", e);
             }
-    }
+            try {
+                strategy.save(members);
+
+            } catch (PersistenceException e) {
+                throw new PersistenceException(PersistenceException.ExceptionType.SaveFailure, "Error saving members");
+            }
+        }
+
+        public void load() throws PersistenceException {
+            if (strategy == null) {
+                throw new PersistenceException(PersistenceException.ExceptionType.NoStrategyIsSet, "No strategy set for persistence");
+            }
+            try {
+                members = strategy.load();
+            } catch (PersistenceException e) {
+                throw new PersistenceException(PersistenceException.ExceptionType.LoadFailure, "Error loading members");
+            }
+        }
+        public List<Member> getCurrentList() {
+            return new ArrayList<>(this.members);
+        }
     }

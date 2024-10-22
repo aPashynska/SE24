@@ -1,6 +1,6 @@
 package org.hbrs.se1.ws24.exercises.uebung3.persistence;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import javax.imageio.IIOException;
+import java.io.*;
 import java.util.List;
 
 public class PersistenceStrategyStream<E> implements PersistenceStrategy<E> {
@@ -22,7 +22,14 @@ public class PersistenceStrategyStream<E> implements PersistenceStrategy<E> {
      * (Last Access: Oct, 15th 2024)
      */
     public void save(List<E> member) throws PersistenceException  {
-
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(location));
+                oos.writeObject(member);
+            }
+        catch (IOException e) {
+            throw new PersistenceException(PersistenceException.ExceptionType.ConnectionNotAvailable,
+                    "Error saving data");
+        }
     }
 
     @Override
@@ -32,6 +39,27 @@ public class PersistenceStrategyStream<E> implements PersistenceStrategy<E> {
      * Take also a look at the import statements above ;-!
      */
     public List<E> load() throws PersistenceException  {
+
+        List<E> newListe = null;
+
+        try (FileInputStream fis = new FileInputStream(location);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+
+            Object obj = ois.readObject();
+
+            if (obj instanceof List<?>) {
+                newListe = (List<E>) obj;
+            } else {
+                throw new PersistenceException(PersistenceException.ExceptionType.ConnectionNotAvailable, "Loaded object is not a list");
+            }
+
+        } catch (IOException e) {
+            throw new PersistenceException(PersistenceException.ExceptionType.ConnectionNotAvailable, "Error loading data");
+        } catch (ClassNotFoundException e) {
+            throw new PersistenceException(PersistenceException.ExceptionType.ConnectionNotAvailable, "Not found");
+        }
+        return newListe;
+
         // Some Coding hints ;-)
 
         // ObjectInputStream ois = null;
@@ -52,6 +80,5 @@ public class PersistenceStrategyStream<E> implements PersistenceStrategy<E> {
         // return newListe
 
         // and finally close the streams
-        return null;
     }
 }
